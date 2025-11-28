@@ -1,0 +1,41 @@
+name: Deploy to Azure Web App
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (if available)
+        run: |
+          if npm run | grep -q " build"; then
+            npm run build
+          else
+            echo "No build script defined"
+          fi
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .
+
+      - name: Deployment Info
+        run: echo "Deployed to ${{ secrets.AZURE_WEBAPP_NAME }}"
+
+# Notes:
+# - Set `AZURE_WEBAPP_NAME` and `AZURE_WEBAPP_PUBLISH_PROFILE` in the repository's Secrets (Settings → Secrets and variables → Actions).
+# - You can get the publish profile from Azure Portal: your Web App → Get publish profile.
